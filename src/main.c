@@ -70,6 +70,37 @@ int main(int argc, char *argv[])
     // DEBUG
     cvdebug_f(p_vector_radar_signal_compressed, "./data/radar_signal_compressed.txt");
 
+    // 检测
+    vsip_scalar_f threshold = 30.0f;
+    vsip_scalar_f delta_time = 1.0f / f_freq_sampling;
+    vsip_length n_detect = 0;
+
+    vsip_scalar_f prev_time = 0.0f;
+
+    for (vsip_length n_index = 0; n_index < n_fft_len; n_index++)
+    {
+        vsip_scalar_f time = n_index * delta_time;
+        vsip_cscalar_f value = vsip_cvget_f(p_vector_radar_signal_compressed, n_index);
+        vsip_scalar_f amplitude = value.r;
+
+        if (amplitude > threshold)
+        {   
+            if (prev_time == 0.0f)
+            {
+                prev_time = time;
+                printf("detect: time = %f\n", time);
+            }
+            else
+            {
+                vsip_scalar_f distance = 3e8 * (time - prev_time) / 2.0f;
+                printf("detect: time = %fs, distance = %fm\n", time, distance);
+            }
+        }
+        else {
+            ;
+        }
+    }
+
     // 释放内存
     vsip_cvalldestroy_f(p_vector_radar_signal_compressed);
     vsip_cvalldestroy_f(p_vector_signal_ref);
