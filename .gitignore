@@ -1,0 +1,11 @@
+.vscode/
+verification/
+vsipl/
+
+radar
+
+*.o
+*.a
+*.so
+
+.DS_Store
