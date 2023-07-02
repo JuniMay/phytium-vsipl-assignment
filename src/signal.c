@@ -1,8 +1,8 @@
 #include "signal.h"
-#include "utils.h"
 #include "hamming.h"
+#include "utils.h"
 
-/// 生成线性调频信号
+/// 生成线性调频信号（复信号）
 void generate_lfm_signal(vsip_scalar_f f_tau, vsip_scalar_f f_freq_sampling,
                          vsip_scalar_f f_freq_low, vsip_scalar_f f_band_width,
                          vsip_cvview_f *p_vector_dst)
@@ -53,6 +53,57 @@ void generate_lfm_signal(vsip_scalar_f f_tau, vsip_scalar_f f_freq_sampling,
     vsip_valldestroy_f(p_vector_temp_1);
 }
 
+/// 使用余弦函数生成线性调频信号的实信号
+void generate_lfm_signal_real(vsip_scalar_f f_tau, vsip_scalar_f f_freq_sampling,
+                              vsip_scalar_f f_freq_low, vsip_scalar_f f_band_width,
+                              vsip_vview_f *p_vector_dst)
+{
+    // 信号长度（样本数量）
+    vsip_length n_signal_length = (vsip_length)(0.5f + f_tau * f_freq_sampling);
+
+    if (p_vector_dst == NULL)
+    {
+        fprintf(stderr, "generate_lfm_signal: p_vector_dst is NULL.\n");
+        return;
+    }
+    else if (vsip_vgetlength_f(p_vector_dst) != n_signal_length)
+    {
+        fprintf(stderr,
+                "generate_lfm_signal: p_vector_dst length is not equal to n_signal_length.\n");
+        return;
+    }
+    else
+    {
+        ;
+    }
+
+    // 初始化时间向量
+    vsip_vview_f *p_vector_time = vsip_vcreate_f(n_signal_length, VSIP_MEM_NONE);
+    // 初始化中间变量
+    vsip_vview_f *p_vector_temp_0 = vsip_vcreate_f(n_signal_length, VSIP_MEM_NONE);
+    // 初始化中间变量
+    vsip_vview_f *p_vector_temp_1 = vsip_vcreate_f(n_signal_length, VSIP_MEM_NONE);
+
+    // 生成时间向量
+    vsip_vramp_f(0.0f, 1.0f / f_freq_sampling, p_vector_time);
+
+    vsip_svmul_f(2.0 * VSIP_PI * f_freq_low, p_vector_time, p_vector_temp_0);
+
+    vsip_vsq_f(p_vector_time, p_vector_temp_1);
+    vsip_svmul_f(VSIP_PI * f_band_width / f_tau, p_vector_temp_1, p_vector_temp_1);
+
+    // 相加得到相位
+    vsip_vadd_f(p_vector_temp_0, p_vector_temp_1, p_vector_temp_0);
+
+    // 应用余弦函数
+    vsip_vcos_f(p_vector_temp_0, p_vector_dst);
+
+    // 释放内存
+    vsip_valldestroy_f(p_vector_time);
+    vsip_valldestroy_f(p_vector_temp_0);
+    vsip_valldestroy_f(p_vector_temp_1);
+}
+
 /// 生成目标反射的雷达实信号
 void generate_radar_signal(vsip_scalar_f f_tau, vsip_scalar_f f_freq_sampling,
                            vsip_scalar_f f_freq_low, vsip_scalar_f f_band_width,
@@ -89,41 +140,34 @@ void generate_radar_signal(vsip_scalar_f f_tau, vsip_scalar_f f_freq_sampling,
     // LFM 信号长度
     vsip_length n_signal_length = (vsip_length)(0.5f + f_tau * f_freq_sampling);
     // 第一个目标返回的信号
-    vsip_cvview_f *p_vector_signal_0 = vsip_cvcreate_f(n_signal_length, VSIP_MEM_NONE);
+    vsip_vview_f *p_vector_signal_0 = vsip_vcreate_f(n_signal_length, VSIP_MEM_NONE);
     // 第二个目标返回的信号
-    vsip_cvview_f *p_vector_signal_1 = vsip_cvcreate_f(n_signal_length, VSIP_MEM_NONE);
+    vsip_vview_f *p_vector_signal_1 = vsip_vcreate_f(n_signal_length, VSIP_MEM_NONE);
 
-    generate_lfm_signal(f_tau, f_freq_sampling, f_freq_low, f_band_width, p_vector_signal_0);
-    generate_lfm_signal(f_tau, f_freq_sampling, f_freq_low, f_band_width, p_vector_signal_1);
+    generate_lfm_signal_real(f_tau, f_freq_sampling, f_freq_low, f_band_width, p_vector_signal_0);
+    generate_lfm_signal_real(f_tau, f_freq_sampling, f_freq_low, f_band_width, p_vector_signal_1);
 
-    // 初始化复信号向量
-    vsip_cvview_f *p_vector_radar_signal = vsip_cvcreate_f(n_total_signal_length, VSIP_MEM_NONE);
     // 延长原始信号向量
-    vsip_cvview_f *p_vector_signal_0_extended =
-        vsip_cvcreate_f(n_total_signal_length, VSIP_MEM_NONE);
+    vsip_vview_f *p_vector_signal_0_extended = vsip_vcreate_f(n_total_signal_length, VSIP_MEM_NONE);
     // 延长原始信号向量
-    vsip_cvview_f *p_vector_signal_1_extended =
-        vsip_cvcreate_f(n_total_signal_length, VSIP_MEM_NONE);
+    vsip_vview_f *p_vector_signal_1_extended = vsip_vcreate_f(n_total_signal_length, VSIP_MEM_NONE);
 
     // 零填充
-    vsip_cvfill_f(vsip_cmplx_f(0.0f, 0.0f), p_vector_signal_0_extended);
-    vsip_cvfill_f(vsip_cmplx_f(0.0f, 0.0f), p_vector_signal_1_extended);
+    vsip_vfill_f(0.0f, p_vector_signal_0_extended);
+    vsip_vfill_f(0.0f, p_vector_signal_1_extended);
 
     // 拷贝数据
     for (vsip_length n_index = 0; n_index < n_signal_length; n_index++)
     {
         // 原始信号
-        vsip_cvput_f(p_vector_signal_0_extended, n_index, vsip_cvget_f(p_vector_signal_0, n_index));
+        vsip_vput_f(p_vector_signal_0_extended, n_index, vsip_vget_f(p_vector_signal_0, n_index));
         // 延迟信号
-        vsip_cvput_f(p_vector_signal_1_extended, n_index + n_delay_signal_length,
-                     vsip_cvget_f(p_vector_signal_1, n_index));
+        vsip_vput_f(p_vector_signal_1_extended, n_index + n_delay_signal_length,
+                    vsip_vget_f(p_vector_signal_1, n_index));
     }
 
     // 叠加信号
-    vsip_cvadd_f(p_vector_signal_0_extended, p_vector_signal_1_extended, p_vector_radar_signal);
-
-    // 取实部
-    vsip_vreal_f(p_vector_radar_signal, p_vector_dst);
+    vsip_vadd_f(p_vector_signal_0_extended, p_vector_signal_1_extended, p_vector_dst);
 
     // 高斯白噪声，SNR=0dB
     vsip_vview_f *p_vector_wgn_signal = vsip_vcreate_f(n_total_signal_length, VSIP_MEM_NONE);
@@ -133,11 +177,10 @@ void generate_radar_signal(vsip_scalar_f f_tau, vsip_scalar_f f_freq_sampling,
     // vsip_vadd_f(p_vector_dst, p_vector_wgn_signal, p_vector_dst);
 
     // 释放内存
-    vsip_cvalldestroy_f(p_vector_signal_0);
-    vsip_cvalldestroy_f(p_vector_signal_1);
-    vsip_cvalldestroy_f(p_vector_signal_0_extended);
-    vsip_cvalldestroy_f(p_vector_signal_1_extended);
-    vsip_cvalldestroy_f(p_vector_radar_signal);
+    vsip_valldestroy_f(p_vector_signal_0);
+    vsip_valldestroy_f(p_vector_signal_1);
+    vsip_valldestroy_f(p_vector_signal_0_extended);
+    vsip_valldestroy_f(p_vector_signal_1_extended);
     vsip_valldestroy_f(p_vector_wgn_signal);
 }
 
@@ -205,7 +248,8 @@ void pulse_compress(vsip_cvview_f *p_vector_signal_src, vsip_cvview_f *p_vector_
     // 求参考信号共轭
     vsip_cvconj_f(p_vector_signal_ref, p_vector_signal_ref);
     // 翻转参考信号
-    vsip_cvview_f *p_vector_signal_ref_flipped = vsip_cvcreate_f(n_signal_ref_length, VSIP_MEM_NONE);
+    vsip_cvview_f *p_vector_signal_ref_flipped =
+        vsip_cvcreate_f(n_signal_ref_length, VSIP_MEM_NONE);
     cvflip_f(p_vector_signal_ref, p_vector_signal_ref_flipped);
     // 加汉明窗
     vsip_vview_f *p_vector_window = vsip_vcreate_f(n_signal_ref_length, VSIP_MEM_NONE);
