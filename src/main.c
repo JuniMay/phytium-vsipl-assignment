@@ -3,9 +3,9 @@
 #include "signal.h"
 #include "utils.h"
 #include "vsip.h"
-#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 int main(int argc, char *argv[])
 {
@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
 
     // 生成雷达接收的实信号
     vsip_vview_f *p_vector_radar_signal = vsip_vcreate_f(n_total_signal_length, VSIP_MEM_NONE);
-    generate_radar_signal(f_tau, f_freq_sampling, f_freq_low, f_band_width, 600.0f, 
+    generate_radar_signal(f_tau, f_freq_sampling, f_freq_low, f_band_width, 600.0f,
                           p_vector_radar_signal);
 
     // DEBUG
@@ -70,38 +70,41 @@ int main(int argc, char *argv[])
     // DEBUG
     cvdebug_f(p_vector_radar_signal_compressed, "./data/radar_signal_compressed.txt");
 
-    // 检测
-    vsip_scalar_f threshold = 30.0f;
-    vsip_scalar_f delta_time = 1.0f / f_freq_sampling;
+    vsip_cvview_f *p_vector_radar_signal_reduced = vsip_cvcreate_f(n_fft_len, VSIP_MEM_NONE);
+    detect_signal(p_vector_radar_signal_compressed, 30.0f, p_vector_radar_signal_reduced);
+
+    // DEBUG
+    cvdebug_f(p_vector_radar_signal_reduced, "./data/radar_signal_reduced.txt");
+
+    vsip_scalar_f f_delta_time = 1.0f / f_freq_sampling;
     vsip_length n_detect = 0;
 
-    vsip_scalar_f prev_time = 0.0f;
-
+    vsip_scalar_f f_prev_time = 0.0f;
     for (vsip_length n_index = 0; n_index < n_fft_len; n_index++)
     {
-        vsip_scalar_f time = n_index * delta_time;
-        vsip_cscalar_f value = vsip_cvget_f(p_vector_radar_signal_compressed, n_index);
-        vsip_scalar_f amplitude = value.r;
+        vsip_scalar_f f_time = (vsip_scalar_f)n_index * f_delta_time;
+        vsip_scalar_f f_real = vsip_real_f(vsip_cvget_f(p_vector_radar_signal_reduced, n_index));
 
-        if (amplitude > threshold)
-        {   
-            if (prev_time == 0.0f)
+        if (f_real > 0.0f)
+        {
+            if (f_prev_time == 0.0f)
             {
-                prev_time = time;
-                printf("detect: time = %f\n", time);
+                f_prev_time = f_time;
+                printf("detect: %f\n", f_time);
             }
             else
             {
-                vsip_scalar_f distance = 3e8 * (time - prev_time) / 2.0f;
-                printf("detect: time = %fs, distance = %fm\n", time, distance);
+                vsip_scalar_f distance = 3e8 * (f_time - f_prev_time) / 2.0f;
+                printf("detect: time = %fs, distance = %fm\n", f_time, distance);
             }
         }
-        else {
+        else
+        {
             ;
         }
     }
-
     // 释放内存
+    vsip_cvalldestroy_f(p_vector_radar_signal_reduced);
     vsip_cvalldestroy_f(p_vector_radar_signal_compressed);
     vsip_cvalldestroy_f(p_vector_signal_ref);
     vsip_valldestroy_f(p_vector_radar_signal);

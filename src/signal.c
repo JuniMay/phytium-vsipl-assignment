@@ -174,7 +174,7 @@ void generate_radar_signal(vsip_scalar_f f_tau, vsip_scalar_f f_freq_sampling,
     generate_wgn_signal(p_vector_dst, 0.0f, p_vector_wgn_signal);
 
     // 叠加噪声
-    // vsip_vadd_f(p_vector_dst, p_vector_wgn_signal, p_vector_dst);
+    vsip_vadd_f(p_vector_dst, p_vector_wgn_signal, p_vector_dst);
 
     // 释放内存
     vsip_valldestroy_f(p_vector_signal_0);
@@ -306,4 +306,48 @@ void pulse_compress(vsip_cvview_f *p_vector_signal_src, vsip_cvview_f *p_vector_
     vsip_cvalldestroy_f(p_vector_signal_ref_padded);
     vsip_cvalldestroy_f(p_vector_signal_ref_flipped);
     vsip_valldestroy_f(p_vector_window);
+}
+
+void detect_signal(vsip_cvview_f *p_vector_signal, vsip_scalar_f f_threshold,
+                   vsip_cvview_f *p_vector_dst)
+{
+    if (p_vector_signal == NULL)
+    {
+        fprintf(stderr, "detect_signal: p_vector_signal is NULL.\n");
+        return;
+    }
+    else if (p_vector_dst == NULL)
+    {
+        fprintf(stderr, "detect_signal: p_vector_dst is NULL.\n");
+        return;
+    }
+    else
+    {
+        ;
+    }
+
+    vsip_length n_signal_length = vsip_cvgetlength_f(p_vector_signal);
+
+    if (vsip_cvgetlength_f(p_vector_dst) != n_signal_length)
+    {
+        fprintf(stderr, "detect_signal: p_vector_dst length is not equal to n_signal_length.\n");
+        return;
+    }
+    else
+    {
+        ;
+    }
+
+    for (vsip_length n_index = 0; n_index < n_signal_length; n_index++)
+    {
+        vsip_scalar_f f_abs = vsip_cmag_f(vsip_cvget_f(p_vector_signal, n_index));
+        if (fabs(f_abs) < f_threshold && fabs(f_abs) < f_threshold)
+        {
+            vsip_cvput_f(p_vector_dst, n_index, vsip_cmplx_f(0.0f, 0.0f));
+        }
+        else
+        {
+            vsip_cvput_f(p_vector_dst, n_index, vsip_cvget_f(p_vector_signal, n_index));
+        }
+    }
 }

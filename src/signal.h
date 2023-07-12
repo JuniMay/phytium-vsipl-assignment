@@ -18,4 +18,7 @@ void generate_radar_signal(vsip_scalar_f f_tau, vsip_scalar_f f_freq_sampling,
 void generate_wgn_signal(vsip_vview_f *p_vector_signal, vsip_scalar_f f_snr,
                          vsip_vview_f *p_vector_dst);
 
+void detect_signal(vsip_cvview_f *p_vector_signal, vsip_scalar_f f_threshold,
+                   vsip_cvview_f *p_vector_dst);
+
 #endif

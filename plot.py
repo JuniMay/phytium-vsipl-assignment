@@ -12,6 +12,10 @@ radar_signal_compressed = open('./data/radar_signal_compressed.txt', 'r').readli
 radar_signal_compressed = map(lambda x: x.replace(' ', '').replace('\n', ''), radar_signal_compressed)
 radar_signal_compressed = list(map(complex, radar_signal_compressed))
 
+radar_signal_reduced = open('./data/radar_signal_reduced.txt', 'r').readlines()
+radar_signal_reduced = map(lambda x: x.replace(' ', '').replace('\n', ''), radar_signal_reduced)
+radar_signal_reduced = list(map(complex, radar_signal_reduced))
+
 hilbert_coefficients = open('./data/hilbert_coefficients.txt', 'r').readlines()
 hilbert_coefficients = map(lambda x: x.replace(' ', '').replace('\n', ''), hilbert_coefficients)
 hilbert_coefficients = list(map(complex, hilbert_coefficients))
@@ -30,6 +34,12 @@ plt.clf()
 plt.plot(np.abs(radar_signal_compressed), label='radar-signal-compressed-abs')
 plt.legend()
 plt.savefig('./data/radar_signal_compressed.png')
+
+plt.clf()
+
+plt.plot(np.abs(radar_signal_reduced), label='radar-signal-reduced-abs')
+plt.legend()
+plt.savefig('./data/radar_signal_reduced.png')
 
 plt.clf()
 

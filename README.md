@@ -65,7 +65,11 @@ $$
 \text{SNR} = 10\log_{10}\frac{\sum_{i=0}^{N-1}x_i^2}{\sum_{i=0}^{N-1}n_i^2}
 $$
 
-其中 $x_i$ 为信号，$n_i$ 为噪声。
+其中 $x_i$ 为信号，$n_i$ 为噪声，且振幅满足分布：
+
+$$
+n \sim \mathcal{N}\left(0, \frac{\sum x_i^2}{10^{\left(\frac{\text{SNR}}{10}\right)}N} \right)
+$$
 
 ### 设计希尔伯特滤波器
 
