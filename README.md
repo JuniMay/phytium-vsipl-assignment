@@ -147,6 +147,73 @@ $$
 
 ### 检测目标数量和间距
 
+
+## 流程图与关键接口
+
+### 流程图
+
+```mermaid
+flowchart 
+  A --> O
+  O[参考信号] --> F
+  subgraph 回波信号生成
+    A[生成信号] --> B[叠加高斯白噪声]
+    B --> C[得到实信号]
+  end
+  subgraph 希尔伯特滤波
+    C --> D[希尔伯特滤波]
+    D --> E[得到复信号]
+    E --> L
+  end
+  subgraph 脉冲压缩
+    F[参考信号的共轭与翻转] --> G[应用汉明窗]
+    G --> K
+    H[计算傅里叶变换长度] -- "补零" --> K[参考信号]
+    H -- "补零" --> L[回波信号]
+    K -- "傅里叶变换" --> J[频域相乘]
+    L -- "傅里叶变换" --> J
+    J --> M[脉冲压缩结果]
+  end
+  M --> N[检测目标及距离]
+```
+
+### 关键接口
+
+生成线性调频信号：
+
+```c
+void generate_lfm_signal(vsip_scalar_f f_tau, vsip_scalar_f f_freq_sampling,
+                         vsip_scalar_f f_freq_low, vsip_scalar_f f_band_width,
+                         vsip_cvview_f *p_vector_dst);
+
+void generate_lfm_signal_real(vsip_scalar_f f_tau, vsip_scalar_f f_freq_sampling,
+                              vsip_scalar_f f_freq_low, vsip_scalar_f f_band_width,
+                              vsip_vview_f *p_vector_dst);
+```
+
+生成高斯白噪声：
+
+```c
+
+void generate_wgn_signal(vsip_vview_f *p_vector_signal, vsip_scalar_f f_snr,
+                         vsip_vview_f *p_vector_dst);
+```
+
+合成雷达信号:
+
+```c
+void generate_radar_signal(vsip_scalar_f f_tau, vsip_scalar_f f_freq_sampling,
+                           vsip_scalar_f f_freq_low, vsip_scalar_f f_band_width,
+                           vsip_scalar_f f_distance, vsip_vview_f *p_vector_dst);
+```
+
+脉冲压缩：
+
+```c
+void pulse_compress(vsip_cvview_f *p_vector_signal_src, vsip_cvview_f *p_vector_signal_ref,
+                    vsip_cvview_f *p_vector_dst);
+```
+
 ## 关于本项目
 
 本项目为 NKU 2023 暑期实习实训飞腾课程大作业。
