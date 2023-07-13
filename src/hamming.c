@@ -1,6 +1,5 @@
 #include "hamming.h"
 
-/// 创建一个汉明窗
 void vcreate_hamming_f(vsip_vview_f *p_vector_dst)
 {
     if (p_vector_dst == NULL)

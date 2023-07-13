@@ -86,7 +86,7 @@ $$
 对于时域信号 $x(t)$，设其频域表示为 $X(\Omega)$，则在频域下的希尔伯特变换可以表示为：
 
 $$
-\widehat{X}(\Omega) = [-j\text{sgn}(\Omega)]X(\Omega) 
+\widehat{X}(\Omega) = [-j\text{sgn}(\Omega)]X(\Omega)
 $$
 
 假设希尔伯特变换之后信号的时域表示为 $\widehat{x}(t)$，则希尔伯特滤波结果的时域表示为：
@@ -132,7 +132,7 @@ $$
 $$
 \begin{aligned}
 h(n) &= \frac{1}{2\pi}\int_{-\pi}^{\pi}[1+\text{sgn}(\omega)]e^{j\omega n}\mathrm{d}\omega \\
-& = \frac{1}{2\pi}\int_{0}^{\pi}2e^{j\omega n}\mathrm{d}\omega 
+& = \frac{1}{2\pi}\int_{0}^{\pi}2e^{j\omega n}\mathrm{d}\omega
 = \frac{1}{\pi}\int_{0}^{\pi}e^{j\omega n}\mathrm{d}\omega \\
 & = \frac{1}{\pi}\frac{e^{j\pi n} - 1}{jn} = \frac{\cos\pi n - 1}{j\pi n} = \frac{j(1-\cos\pi n)}{\pi n}\\
 & = \begin{cases}
@@ -146,7 +146,6 @@ $$
 ### 应用脉冲压缩
 
 ### 检测目标数量和间距
-
 
 ## 流程图与关键接口
 

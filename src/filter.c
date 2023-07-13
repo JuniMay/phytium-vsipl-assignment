@@ -1,10 +1,6 @@
 #include "filter.h"
 #include "utils.h"
 
-/// 希尔伯特变换
-/// 
-/// 当前 VSIPL 版本中没有复数卷积的操作，由于希尔伯特滤波器系数为实数或虚数而没有复合，
-/// 所以可以分别对实部和虚部进行卷积操作。
 void hilbert(vsip_vview_f *p_vector_src, vsip_scalar_i n_filter_length, vsip_cvview_f *p_vector_dst)
 {
     vsip_length n_signal_length = vsip_vgetlength_f(p_vector_src);
@@ -64,6 +60,9 @@ void hilbert(vsip_vview_f *p_vector_src, vsip_scalar_i n_filter_length, vsip_cvv
     // 用于卷积结果的实部和虚部
     vsip_vview_f *p_vector_cmplx_signal_real = vsip_vcreate_f(n_signal_length, VSIP_MEM_NONE);
     vsip_vview_f *p_vector_cmplx_signal_imag = vsip_vcreate_f(n_signal_length, VSIP_MEM_NONE);
+    
+    // 当前 VSIPL 版本中没有复数卷积的操作，由于希尔伯特滤波器系数为实数或虚数而没有复合，
+    // 所以可以分别对实部和虚部进行卷积操作。
 
     // 实部卷积核
     vsip_conv1d_f *p_filter_real =
