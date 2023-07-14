@@ -70,39 +70,66 @@ int main(int argc, char *argv[])
     // DEBUG
     cvdebug_f(p_vector_radar_signal_compressed, "./data/radar_signal_compressed.txt");
 
+    // 根据 30 阈值筛选
     vsip_cvview_f *p_vector_radar_signal_reduced = vsip_cvcreate_f(n_fft_len, VSIP_MEM_NONE);
     detect_signal(p_vector_radar_signal_compressed, 30.0f, p_vector_radar_signal_reduced);
 
     // DEBUG
     cvdebug_f(p_vector_radar_signal_reduced, "./data/radar_signal_reduced.txt");
 
+    // 检测目标并且输出距离
+    // 采样间隔
     vsip_scalar_f f_delta_time = 1.0f / f_freq_sampling;
-    vsip_length n_detect = 0;
-
+    // 上一个峰值的时间
     vsip_scalar_f f_prev_time = 0.0f;
-    for (vsip_length n_index = 0; n_index < n_fft_len; n_index++)
-    {
-        vsip_scalar_f f_time = (vsip_scalar_f)n_index * f_delta_time;
-        vsip_scalar_f f_real = vsip_real_f(vsip_cvget_f(p_vector_radar_signal_reduced, n_index));
+    // 在向量中的下标
+    vsip_length n_index = 0;
 
-        if (f_real > 0.0f)
+    while (n_index < n_fft_len - 1)
+    {
+        // 当前时间
+        vsip_scalar_f f_curr_time = (vsip_scalar_f)n_index * f_delta_time;
+        // 下一个时间
+        vsip_scalar_f f_next_time = (vsip_scalar_f)(n_index + 1) * f_delta_time;
+        // 当前幅值
+        vsip_scalar_f f_curr_mag =
+            vsip_cmag_f(vsip_cvget_f(p_vector_radar_signal_reduced, n_index));
+        // 下一个幅值
+        vsip_scalar_f f_next_mag =
+            vsip_cmag_f(vsip_cvget_f(p_vector_radar_signal_reduced, n_index + 1));
+
+        if (f_curr_mag <= f_next_mag)
         {
-            if (f_prev_time == 0.0f)
-            {
-                f_prev_time = f_time;
-                printf("detect: %f\n", f_time);
-            }
-            else
-            {
-                vsip_scalar_f distance = 3e8 * (f_time - f_prev_time) / 2.0f;
-                printf("detect: time = %fs, distance = %fm\n", f_time, distance);
-            }
+            // 若仍然处于递增阶段，则继续向后搜索
+            n_index++;
         }
         else
         {
-            ;
+            // 当前幅值大于前一个幅值，且大于后一个幅值，说明是一个峰值
+            if (f_prev_time == 0.0f)
+            {
+                // 第一个目标，记录时间
+                f_prev_time = f_curr_time;
+                printf("detect: time = %fs\n", f_curr_time);
+            }
+            else
+            {
+                // 与上一个目标的距离
+                vsip_scalar_f f_distance = 3e8 * (f_curr_time - f_prev_time) / 2.0f;
+                // 记录时间
+                f_prev_time = f_curr_time;
+                printf("detect: time = %fs, distance = %fm\n", f_curr_time, f_distance);
+            }
+            while (f_curr_mag > f_next_mag)
+            {
+                // 在递减阶段，继续向后搜索
+                n_index++;
+                f_curr_mag = vsip_cmag_f(vsip_cvget_f(p_vector_radar_signal_reduced, n_index));
+                f_next_mag = vsip_cmag_f(vsip_cvget_f(p_vector_radar_signal_reduced, n_index + 1));
+            }
         }
     }
+
     // 释放内存
     vsip_cvalldestroy_f(p_vector_radar_signal_reduced);
     vsip_cvalldestroy_f(p_vector_radar_signal_compressed);

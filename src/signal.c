@@ -341,10 +341,12 @@ void detect_signal(vsip_cvview_f *p_vector_signal, vsip_scalar_f f_threshold,
         vsip_scalar_f f_abs = vsip_cmag_f(vsip_cvget_f(p_vector_signal, n_index));
         if (fabs(f_abs) < f_threshold && fabs(f_abs) < f_threshold)
         {
+            // 低于阈值的信号置零
             vsip_cvput_f(p_vector_dst, n_index, vsip_cmplx_f(0.0f, 0.0f));
         }
         else
         {
+            // 大于阈值的信号保留
             vsip_cvput_f(p_vector_dst, n_index, vsip_cvget_f(p_vector_signal, n_index));
         }
     }

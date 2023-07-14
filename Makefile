@@ -11,19 +11,19 @@ SRC = $(wildcard src/*.c)
 OBJ = $(patsubst %.c, %.o, $(SRC))
 
 $(TARGET): $(OBJ)
-	$(CC) $(OBJ) $(CFLAGS) -o $(TARGET)
+	@$(CC) $(OBJ) $(CFLAGS) -o $(TARGET)
 
 %.o: %.c
-	$(CC) -c $< $(CFLAGS) -o $@
+	@$(CC) -c $< $(CFLAGS) -o $@
 
 .PHONY: clean all run
 
 all: $(TARGET)
 
 run: $(TARGET)
-	mkdir -p data
-	./$(TARGET)
-	$(PY) ./plot.py
+	@mkdir -p data
+	@./$(TARGET)
+	@$(PY) ./plot.py
 
 clean:
 	rm -f $(TARGET) $(OBJ)

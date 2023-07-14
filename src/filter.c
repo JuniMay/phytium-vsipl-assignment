@@ -51,16 +51,18 @@ void hilbert(vsip_vview_f *p_vector_src, vsip_scalar_i n_filter_length, vsip_cvv
 
     cvdebug_f(p_vector_hilbert_transformer, "./data/hilbert_coefficients.txt");
 
-    // 不能释放
+    // 得到滤波器系数的实部和虚部
     vsip_vview_f *p_vector_hilbert_transformer_real =
-        vsip_vrealview_f(p_vector_hilbert_transformer);
+        vsip_vcreate_f(n_filter_length, VSIP_MEM_NONE);
     vsip_vview_f *p_vector_hilbert_transformer_imag =
-        vsip_vimagview_f(p_vector_hilbert_transformer);
+        vsip_vcreate_f(n_filter_length, VSIP_MEM_NONE);
+    vsip_vreal_f(p_vector_hilbert_transformer, p_vector_hilbert_transformer_real);
+    vsip_vimag_f(p_vector_hilbert_transformer, p_vector_hilbert_transformer_imag);
 
     // 用于卷积结果的实部和虚部
     vsip_vview_f *p_vector_cmplx_signal_real = vsip_vcreate_f(n_signal_length, VSIP_MEM_NONE);
     vsip_vview_f *p_vector_cmplx_signal_imag = vsip_vcreate_f(n_signal_length, VSIP_MEM_NONE);
-    
+
     // 当前 VSIPL 版本中没有复数卷积的操作，由于希尔伯特滤波器系数为实数或虚数而没有复合，
     // 所以可以分别对实部和虚部进行卷积操作。
 
@@ -91,5 +93,7 @@ void hilbert(vsip_vview_f *p_vector_src, vsip_scalar_i n_filter_length, vsip_cvv
     vsip_conv1d_destroy_f(p_filter_imag);
     vsip_vdestroy_f(p_vector_cmplx_signal_imag);
     vsip_vdestroy_f(p_vector_cmplx_signal_real);
+    vsip_vdestroy_f(p_vector_hilbert_transformer_imag);
+    vsip_vdestroy_f(p_vector_hilbert_transformer_real);
     vsip_cvalldestroy_f(p_vector_hilbert_transformer);
 }

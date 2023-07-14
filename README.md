@@ -147,6 +147,19 @@ $$
 
 ### 检测目标数量和间距
 
+根据一定的阈值对脉冲压缩之后所得到的信号进行筛选，之后线性遍历信号中离散的点，依据对应的下标和采样率得到时间，从而得到目标的距离。首先根据采样率 $f_{\mathrm{sample}}$ 得到采样的间隔
+$$
+\Delta t_{\mathrm{sample}} = \frac{1}{f_{\mathrm{sample}}}
+$$
+假设检测到了两个相邻的峰值，且二者的下标相差 $n$，则二者的时间间隔为
+$$
+\Delta t = n\Delta t_{\mathrm{sample}}
+$$
+最后根据光速计算得到距离
+$$
+d = \frac{c\Delta t}{2}
+$$
+
 ## 流程图与关键接口
 
 ### 流程图
@@ -174,45 +187,165 @@ flowchart
     J --> M[脉冲压缩结果]
   end
   M --> N[检测目标及距离]
+  P[对噪声信号单独采样变换仿真得到阈值] --> N
 ```
 
 ### 关键接口
 
-生成线性调频信号：
+希尔伯特滤波
 
 ```c
+/*
+ * 内部接口：希尔伯特滤波
+ * 参数：p_vector_src    -- 输入信号
+ *      n_filter_length -- 滤波器长度
+ *      p_vector_dst    -- 输出信号
+ * 功能：对输入信号进行希尔伯特滤波
+ */
+void hilbert(vsip_vview_f *p_vector_src, vsip_scalar_i n_filter_length,
+             vsip_cvview_f *p_vector_dst);
+
+```
+
+汉明窗
+
+```c
+/*
+ * 内部接口：生成汉明窗
+ * 参数：p_vector_dst -- 输出信号
+ * 功能：根据输出信号的长度生成汉明窗
+ */
+void vcreate_hamming_f(vsip_vview_f *p_vector_dst);
+```
+
+信号生成以及处理
+
+```c
+/*
+ * 内部接口：生成线性调频信号
+ * 参数：f_tau           -- 脉冲宽度
+ *      f_freq_sampling -- 采样频率
+ *      f_freq_low      -- 起始频率
+ *      f_band_width    -- 带宽
+ *      p_vector_dst    -- 输出信号
+ * 功能：生成线性调频信号（复信号）
+ */
 void generate_lfm_signal(vsip_scalar_f f_tau, vsip_scalar_f f_freq_sampling,
                          vsip_scalar_f f_freq_low, vsip_scalar_f f_band_width,
                          vsip_cvview_f *p_vector_dst);
 
+/*
+ * 内部接口：生成线性调频信号
+ * 参数：f_tau           -- 脉冲宽度
+ *      f_freq_sampling -- 采样频率
+ *      f_freq_low      -- 起始频率
+ *      f_band_width    -- 带宽
+ *      p_vector_dst    -- 输出信号
+ * 功能：生成线性调频信号（实信号）
+ */
 void generate_lfm_signal_real(vsip_scalar_f f_tau, vsip_scalar_f f_freq_sampling,
                               vsip_scalar_f f_freq_low, vsip_scalar_f f_band_width,
                               vsip_vview_f *p_vector_dst);
-```
 
-生成高斯白噪声：
-
-```c
-
-void generate_wgn_signal(vsip_vview_f *p_vector_signal, vsip_scalar_f f_snr,
-                         vsip_vview_f *p_vector_dst);
-```
-
-合成雷达信号:
-
-```c
+/*
+ * 内部接口：生成雷达回波信号
+ * 参数：f_tau           -- 脉冲宽度
+ *      f_freq_sampling -- 采样频率
+ *      f_freq_low      -- 起始频率
+ *      f_band_width    -- 带宽
+ *      f_disatance     -- 两个物体之间的距离
+ *      p_vector_dst    -- 输出信号
+ * 功能：生成两个有一定距离的物体反射叠加得到的雷达回波信号
+ */
 void generate_radar_signal(vsip_scalar_f f_tau, vsip_scalar_f f_freq_sampling,
                            vsip_scalar_f f_freq_low, vsip_scalar_f f_band_width,
                            vsip_scalar_f f_distance, vsip_vview_f *p_vector_dst);
-```
 
-脉冲压缩：
+/*
+ * 内部接口：生成雷达回波信号
+ * 参数：p_vector_signal -- 输入信号
+ *      f_snr           -- 目标信号信噪比
+ *      p_vector_dst    -- 输出信号
+ * 功能：生成可以叠加到原信号上的给定信噪比的高斯白噪声
+ */
+void generate_wgn_signal(vsip_vview_f *p_vector_signal, vsip_scalar_f f_snr,
+                         vsip_vview_f *p_vector_dst);
 
-```c
+/*
+ * 内部接口：脉冲压缩
+ * 参数：p_vector_signal_src -- 输入信号
+ *      p_vector_signal_ref -- 参考信号
+ *      p_vector_dst        -- 输出信号
+ * 功能：使用给定的参考信号对输入信号进行脉冲压缩
+ */
 void pulse_compress(vsip_cvview_f *p_vector_signal_src, vsip_cvview_f *p_vector_signal_ref,
                     vsip_cvview_f *p_vector_dst);
+
+
+/*
+ * 内部接口：检测信号
+ * 参数：p_vector_signal -- 脉冲压缩之后得到的信号
+ *      f_threshold     -- 阈值
+ *      p_vector_dst    -- 输出信号
+ * 功能：对脉冲压缩之后的信号进行进一步检测，依据阈值进行筛选
+ */
+void detect_signal(vsip_cvview_f *p_vector_signal, vsip_scalar_f f_threshold,
+                   vsip_cvview_f *p_vector_dst);
+```
+
+用于输出和调试的函数
+
+```c
+/*
+ * 内部接口：输出实向量
+ * 参数：p_vector -- 输入向量
+ *      p_file   -- 输出文件
+ * 功能：将实向量的数据输出到文件
+ */
+void vdump_f(vsip_vview_f *p_vector, FILE *p_file);
+
+/*
+ * 内部接口：输出复向量
+ * 参数：p_vector -- 输入向量
+ *      p_file   -- 输出文件
+ * 功能：将复向量的数据输出到文件
+ */
+void cvdump_f(vsip_cvview_f *p_vector, FILE *p_file);
+
+/*
+ * 内部接口：实向量调试
+ * 参数：p_vector -- 输入向量
+ *      p_name   -- 输出文件名
+ * 功能：将实向量的数据输出到指定文件名的文件
+ */
+void vdebug_f(vsip_vview_f *p_vector, char *p_name);
+
+/*
+ * 内部接口：复向量调试
+ * 参数：p_vector -- 输入向量
+ *      p_name   -- 输出文件名
+ * 功能：将复向量的数据输出到指定文件名的文件
+ */
+void cvdebug_f(vsip_cvview_f *p_vector, char *p_name);
+
+/*
+ * 内部接口：复向量翻转
+ * 参数：p_vector_src -- 输入向量
+ *      p_vector_dst -- 输出向量
+ * 功能：将输入向量的数据翻转后输出到输出向量
+ */
+void cvflip_f(vsip_cvview_f *p_vector_src, vsip_cvview_f *p_vector_dst);
+
+/*
+ * 内部接口：复向量填充
+ * 参数：p_vector_src -- 输入向量
+ *      p_vector_dst -- 输出向量
+ * 功能：根据输出向量的长度对输入向量进行零填充得到输出
+ */
+void cvpad_f(vsip_cvview_f *p_vector_src, vsip_cvview_f *p_vector_dst);
+
 ```
 
 ## 关于本项目
 
-本项目为 NKU 2023 暑期实习实训飞腾课程大作业。
+本项目为 NKU 2023 暑期实习实训飞腾课程 VSIPL 大作业。

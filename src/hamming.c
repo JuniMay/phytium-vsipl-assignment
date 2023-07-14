@@ -18,6 +18,7 @@ void vcreate_hamming_f(vsip_vview_f *p_vector_dst)
     const vsip_scalar_f f_a0 = (float)0.53836;
     const vsip_scalar_f f_a1 = (float)(1.0f - f_a0);
 
+    // 生成汉明窗
     for (vsip_length n_index = 0; n_index < n_length; n_index++)
     {
         vsip_scalar_f f_element =

@@ -35,7 +35,7 @@ void generate_lfm_signal_real(vsip_scalar_f f_tau, vsip_scalar_f f_freq_sampling
  *      f_freq_sampling -- 采样频率
  *      f_freq_low      -- 起始频率
  *      f_band_width    -- 带宽
- *      f_disatance     -- 两个物体之间的距离
+ *      f_distance      -- 两个物体之间的距离
  *      p_vector_dst    -- 输出信号
  * 功能：生成两个有一定距离的物体反射叠加得到的雷达回波信号
  */
@@ -55,9 +55,9 @@ void generate_wgn_signal(vsip_vview_f *p_vector_signal, vsip_scalar_f f_snr,
 
 /*
  * 内部接口：脉冲压缩
- * 参数：p_vector_signal -- 输入信号
- *      p_vector_ref    -- 参考信号
- *      p_vector_dst    -- 输出信号
+ * 参数：p_vector_signal_src -- 输入信号
+ *      p_vector_signal_ref -- 参考信号
+ *      p_vector_dst        -- 输出信号
  * 功能：使用给定的参考信号对输入信号进行脉冲压缩
  */
 void pulse_compress(vsip_cvview_f *p_vector_signal_src, vsip_cvview_f *p_vector_signal_ref,
